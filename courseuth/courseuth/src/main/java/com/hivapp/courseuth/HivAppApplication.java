@@ -4,10 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CourseuthApplication {
-
+public class HivAppApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(CourseuthApplication.class, args);
+		SpringApplication.run(HivAppApplication.class, args);
 	}
 
 }
