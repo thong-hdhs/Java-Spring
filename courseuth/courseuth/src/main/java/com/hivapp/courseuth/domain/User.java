@@ -1,8 +1,12 @@
 package com.hivapp.courseuth.domain;
 
-import java.util.Date;
+import java.time.Instant;
+
+import com.hivapp.courseuth.util.constant.GenderEnum;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,20 +22,24 @@ import lombok.Setter;
 public class User {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String id;
     private String fullName;
 
     @NotBlank(message = "Email là bắc buộc")
     private String email;
+
+    @NotBlank(message = "Password là bắc buộc")
     private String password;
     private String phoneNumber;
     private int age;
-    private String gender;
+
+    @Enumerated(EnumType.STRING)
+    private GenderEnum gender;
     private String address;
     private String refreshToken;
-    private Date createAt;
-    private Date updateAt;
+    private Instant createAt;
+    private Instant updateAt;
     private String createBy;
     private String updateBy;
 }
