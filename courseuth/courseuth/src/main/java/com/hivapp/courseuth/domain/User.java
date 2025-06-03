@@ -2,9 +2,18 @@ package com.hivapp.courseuth.domain;
 
 import java.time.Instant;
 
-import com.hivapp.courseuth.util.constant.GenderEnum;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.hivapp.courseuth.util.constant.GenderEnum;
+import com.hivapp.courseuth.util.constant.RoleEnum;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -19,11 +28,12 @@ import lombok.Setter;
 @Table(name = "users")
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class User {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id;
+    private Long id;
     private String fullName;
 
     @NotBlank(message = "Email là bắc buộc")
@@ -37,9 +47,22 @@ public class User {
     @Enumerated(EnumType.STRING)
     private GenderEnum gender;
     private String address;
+
+    @Column(columnDefinition="MEDIUMTEXT")
     private String refreshToken;
+
+    @Enumerated(EnumType.STRING)
+    private RoleEnum role = RoleEnum.GUEST;
+
+    @CreatedDate
     private Instant createAt;
+
+    @LastModifiedDate
     private Instant updateAt;
+
+    @CreatedBy
     private String createBy;
+
+    @LastModifiedBy
     private String updateBy;
 }
