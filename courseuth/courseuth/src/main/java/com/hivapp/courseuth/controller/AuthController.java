@@ -1,6 +1,8 @@
 package com.hivapp.courseuth.controller;
 
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -171,16 +173,24 @@ public class AuthController {
     @PostMapping("/auth/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterDTO registerDTO) {
         if (userService.isEmailExit(registerDTO.getEmail())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body("Email đã tồn tại, vui lòng sử dụng email khác.");
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                    "statusCode", HttpStatus.CONFLICT.value(),
+                    "message", "Email đã tồn tại."
+                ));
         }
+
         User user = new User();
+        user.setFullName(registerDTO.getFullName());
         user.setEmail(registerDTO.getEmail());
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         user.setRole(com.hivapp.courseuth.util.constant.RoleEnum.MEMBER);
         userService.handleCreateUser(user);
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body("Đăng ký thành công! Bạn có thể đăng nhập ngay.");
+            .body(Map.of(
+                "statusCode", HttpStatus.CREATED.value(),
+                "message", "Đăng ký thành công! Bạn có thể đăng nhập ngay."
+            ));
     }
 
 }

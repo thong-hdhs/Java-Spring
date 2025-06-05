@@ -21,7 +21,7 @@ public class GlobalException {
         RestResponse<Object> res = new RestResponse<>();
         res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
         res.setError(ex.getMessage());
-        res.setMessage("Invalid login information");
+        res.setMessage("Thông tin đăng nhập không hợp lệ.");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
     }
 

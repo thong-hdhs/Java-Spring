@@ -34,12 +34,14 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotBlank(message = "Tên là bắc buộc")
     private String fullName;
 
     @NotBlank(message = "Email là bắc buộc")
     private String email;
 
-    @NotBlank(message = "Password là bắc buộc")
+    // @NotBlank(message = "Password là bắc buộc")
     private String password;
     private String phoneNumber;
     private int age;
@@ -65,4 +67,5 @@ public class User {
 
     @LastModifiedBy
     private String updateBy;
+
 }

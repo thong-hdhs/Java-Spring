@@ -22,10 +22,10 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Kiểm tra xem tài khoản admin đã tồn tại chưa
-        if (!userService.isEmailExit("admin@ut.edu.vn")) {
+        if (!userService.isEmailExit("admin3@ut.edu.vn")) {
             User admin = new User();
-            admin.setEmail("admin@ut.edu.vn");
-            admin.setPassword(passwordEncoder.encode("123456"));
+            admin.setEmail("admin3@ut.edu.vn");
+            admin.setPassword(passwordEncoder.encode("Thideptrai21"));
             admin.setFullName("Administrator");
             admin.setRole(RoleEnum.ADMIN);
             userService.handleCreateUser(admin);
