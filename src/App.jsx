@@ -4,7 +4,8 @@ import UserAuthForm from "./pages/userAuthForm.page";
 import { useEffect, useState, createContext } from "react";
 import { lookInSession } from "./common/session";
 import GoogleOAuthHandler from "./components/GoogleOAuthHandler";
-
+import Editor from "./pages/editor.pages";
+import { Toaster } from "react-hot-toast";
 
 export const UserContext = createContext({});
 
@@ -22,7 +23,9 @@ const App = () => {
 
   return (
     <UserContext.Provider value={{ userAuth, setUserAuth }}>
+      <Toaster />
       <Routes>
+        <Route path="/editor" element={<Editor/>}/>
         <Route path='/' element={<Navbar />}>
           <Route path="/" element={<GoogleOAuthHandler />} />
           <Route path='signin' element={<UserAuthForm type='sign-in' />} />
