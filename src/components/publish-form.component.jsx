@@ -3,12 +3,17 @@ import AnimationWrapper from "../common/page-animation";
 import toast, { Toaster } from "react-hot-toast";
 import { EditorContext } from "../pages/editor.pages";
 import Tag from "./tags.component";
+import axios from "axios";
+import { UserContext } from "../App";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const PublishForm = () => {
 
     const charLimit = 200;
     const tagLimit = 10;
     let {blog, blog:{banner, title, content, tags, des}, setEditorState, setBlog} = useContext(EditorContext)
+
+    // let {userAuth: {accessToken}} = useContext(UserContext)
 
     const handleCloseEvent = () => {
         setEditorState("editor")
@@ -44,6 +49,66 @@ const PublishForm = () => {
             }
             e.target.value = "";
         }
+    }
+
+    const publishBlog = (e) => {
+
+        if(e.target.className.includes("disabled")){
+            return;
+        }
+        if(!title.length){
+            return toast.error("Tiêu đề bài viết không được để trống")
+        }
+
+        if(!des.length || des.length > charLimit){
+            return toast.error(`Mô tả bài viết trong khoảng ${charLimit} ký tự`)
+        }
+
+        if(!tags.length){
+            return toast.error("Bạn phải thêm ít nhất 1 topic")
+        }
+
+        let loadingToast = toast.loading("Đang đăng bài viết...")
+
+        e.target.classList.add("disabled")
+
+        let blogObj = {
+            title, banner, des, content, tags,
+            // draft: true,
+        }
+
+        console.log(blogObj)
+
+        const userString = sessionStorage.getItem('user');
+        if (userString) {
+            const userData = JSON.parse(userString);
+            const accessToken = userData.accessToken;
+        
+
+            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/blogs", blogObj, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            })
+            .then(()=>{
+                e.target.classList.remove("disabled");
+                toast.dismiss(loadingToast);
+                toast.success("Đăng bài viết thành công")
+
+                // setTimeout(()=>{
+                //     navigate("/")
+                // }, 1000)
+            })
+            .catch(({response})=>{
+                e.target.classList.remove("disabled");
+                toast.dismiss(loadingToast);
+                return toast.error(response.data.message)
+            })
+
+        }
+        
+        
     }
     
     
@@ -120,7 +185,9 @@ const PublishForm = () => {
                             {tagLimit - tags.length} Topic còn lại
                         </p>
 
-                        <button className="btn-dark px-8 py-3 my-4 md:w-full">
+                        <button className="btn-dark px-8 py-3 my-4 md:w-full"
+                            onClick={publishBlog}
+                        >
                             Đăng bài viết
                         </button>
                 </div>               
