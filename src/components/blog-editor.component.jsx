@@ -80,11 +80,11 @@ const BlogEditor = () => {
                     <button className="btn-dark py-2 "
                         onClick={handlePublishEvent}
                     >
-                        Đăng
+                        Đăng bài viết
                     </button>
-                    <button className="btn-light py-2 ">
+                    {/* <button className="btn-light py-2 ">
                         Lưu bản nháp
-                    </button>
+                    </button> */}
 
                 </div>
             </nav>
