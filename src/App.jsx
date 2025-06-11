@@ -6,6 +6,7 @@ import { lookInSession } from "./common/session";
 import GoogleOAuthHandler from "./components/GoogleOAuthHandler";
 import Editor from "./pages/editor.pages";
 import { Toaster } from "react-hot-toast";
+import HomePage from "./pages/home.page";
 
 export const UserContext = createContext({});
 
@@ -27,9 +28,10 @@ const App = () => {
       <Routes>
         <Route path="/editor" element={<Editor/>}/>
         <Route path='/' element={<Navbar />}>
-          <Route path="/" element={<GoogleOAuthHandler />} />
+          <Route index element={<HomePage />} />
           <Route path='signin' element={<UserAuthForm type='sign-in' />} />
           <Route path='signup' element={<UserAuthForm type='sign-up' />} />
+          <Route path='auth/google' element={<GoogleOAuthHandler />} />
         </Route>
       </Routes>
     </UserContext.Provider>
