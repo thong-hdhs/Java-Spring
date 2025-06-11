@@ -69,7 +69,7 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/login", "/auth/refresh", "/auth/register", "/auth/google", "/auth/google/callback", "/").permitAll()
+                .requestMatchers("/auth/login", "/auth/refresh", "/auth/register", "/auth/google", "/auth/google/callback", "/", "/api/blogs/latest-blogs", "/api/blogs/trending-blogs").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
@@ -118,7 +118,7 @@ public class SecurityConfiguration {
                     response.addHeader(HttpHeaders.SET_COOKIE, resCookies.toString());
 
                     // Redirect về frontend với token trong URL
-                    String frontendUrl = "http://localhost:5173"; // URL frontend React/Vite thường chạy trên port 5173
+                    String frontendUrl = "http://localhost:5173/auth/google"; // URL frontend React/Vite thường chạy trên port 5173
                     String redirectUrl = frontendUrl + "?access_token=" + access_token + 
                                        "&user_id=" + existingUser.getId() + 
                                        "&user_name=" + java.net.URLEncoder.encode(existingUser.getFullName(), "UTF-8") + 

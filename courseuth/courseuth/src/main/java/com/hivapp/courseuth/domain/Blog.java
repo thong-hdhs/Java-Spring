@@ -1,10 +1,15 @@
 package com.hivapp.courseuth.domain;
 
+import java.time.Instant;
 import java.util.List;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -21,6 +26,7 @@ import lombok.Setter;
 @Table(name = "blogs")
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class Blog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,4 +53,7 @@ public class Blog {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @CreatedDate
+    private Instant published_at;
 }

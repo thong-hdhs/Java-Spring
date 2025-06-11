@@ -1,6 +1,7 @@
 import { useEffect, useContext } from 'react';
 import { UserContext } from '../App';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 export default function GoogleOAuthHandler() {
     const { setUserAuth } = useContext(UserContext);
@@ -22,11 +23,21 @@ export default function GoogleOAuthHandler() {
                     email: userEmail
                 }
             };
-            sessionStorage.setItem('user', JSON.stringify(userData));
-            setUserAuth(userData);
-            window.history.replaceState({}, document.title, '/');
-            navigate('/');
-            console.log(userData);
+            
+            try {
+                sessionStorage.setItem('user', JSON.stringify(userData));
+                setUserAuth(userData);
+                toast.success('Đăng nhập thành công!');
+                window.history.replaceState({}, document.title, '/');
+                navigate('/', { replace: true });
+            } catch (error) {
+                console.error('Lỗi khi xử lý đăng nhập:', error);
+                toast.error('Có lỗi xảy ra khi đăng nhập');
+                navigate('/signin');
+            }
+        } else {
+            toast.error('Không nhận được thông tin đăng nhập');
+            navigate('/signin');
         }
     }, [setUserAuth, navigate]);
 
