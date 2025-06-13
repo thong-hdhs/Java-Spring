@@ -69,7 +69,7 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/login", "/auth/refresh", "/auth/register", "/auth/google", "/auth/google/callback", "/", "/api/blogs/latest-blogs", "/api/blogs/trending-blogs").permitAll()
+                .requestMatchers("/auth/login", "/auth/refresh", "/auth/register", "/auth/google", "/auth/google/callback", "/", "/api/blogs/latest-blogs", "/api/blogs/trending-blogs", "/api/blogs/search-blogs").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

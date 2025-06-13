@@ -23,6 +23,7 @@ import com.hivapp.courseuth.domain.dto.BlogDTO;
 import com.hivapp.courseuth.domain.dto.LastedBlogDTO;
 import com.hivapp.courseuth.domain.dto.ResBlogDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
+import com.hivapp.courseuth.domain.dto.SearchBlogDTO;
 import com.hivapp.courseuth.service.BlogService;
 import com.hivapp.courseuth.service.UserService;
 import com.hivapp.courseuth.util.SecurityUtil;
@@ -238,6 +239,71 @@ public class BlogController {
         response.setError(null);
         response.setMessage("Call API Success");
         response.setData(trendingBlogs);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/search-blogs")
+    public ResponseEntity<RestResponse<List<LastedBlogDTO>>> searchBlogs(@RequestBody SearchBlogDTO searchDTO) {
+        List<Blog> blogs = blogService.getAllBlogs();
+        List<LastedBlogDTO> searchResults = blogs.stream()
+            .filter(blog -> blog.getTags() != null && blog.getTags().contains(searchDTO.getTag()))
+            .map(blog -> {
+                LastedBlogDTO lastedBlog = new LastedBlogDTO();
+                lastedBlog.setBlog_id(blog.getId());
+                lastedBlog.setTitle(blog.getTitle());
+                lastedBlog.setBanner(blog.getBanner());
+                lastedBlog.setDes(blog.getDes());
+                lastedBlog.setTags(blog.getTags());
+                lastedBlog.setPublished_at(blog.getPublished_at());
+
+                // Set activity
+                if (blog.getBlogActivity() != null) {
+                    LastedBlogDTO.BlogActivityDTO activity = new LastedBlogDTO.BlogActivityDTO();
+                    activity.setTotal_likes(blog.getBlogActivity().getTotal_likes());
+                    activity.setTotal_comments(blog.getBlogActivity().getTotal_comments());
+                    activity.setTotal_reads(blog.getBlogActivity().getTotal_views());
+                    activity.setTotal_parent_comments(blog.getBlogActivity().getTotal_parent_comments());
+                    lastedBlog.setActivity(activity);
+                }
+
+                // Set author
+                if (blog.getUser() != null) {
+                    LastedBlogDTO.AuthorDTO author = new LastedBlogDTO.AuthorDTO();
+                    LastedBlogDTO.AuthorDTO.PersonalInfoDTO personalInfo = new LastedBlogDTO.AuthorDTO.PersonalInfoDTO();
+                    personalInfo.setFullName(blog.getUser().getFullName());
+                    personalInfo.setEmail(blog.getUser().getEmail());
+                    personalInfo.setGender(blog.getUser().getGender() != null ? blog.getUser().getGender().toString() : "");
+                    author.setPersonal_info(personalInfo);
+                    lastedBlog.setAuthor(author);
+                }
+                return lastedBlog;
+            })
+            .sorted((b1, b2) -> {
+                // Sắp xếp theo tổng lượt xem, lượt like, thời gian phát hành
+                int cmp = Integer.compare(
+                    b2.getActivity() != null && b2.getActivity().getTotal_reads() != null ? b2.getActivity().getTotal_reads().intValue() : 0,
+                    b1.getActivity() != null && b1.getActivity().getTotal_reads() != null ? b1.getActivity().getTotal_reads().intValue() : 0
+                );
+                if (cmp == 0) {
+                    cmp = Integer.compare(
+                        b2.getActivity() != null && b2.getActivity().getTotal_likes() != null ? b2.getActivity().getTotal_likes().intValue() : 0,
+                        b1.getActivity() != null && b1.getActivity().getTotal_likes() != null ? b1.getActivity().getTotal_likes().intValue() : 0
+                    );
+                }
+                if (cmp == 0) {
+                    if (b2.getPublished_at() != null && b1.getPublished_at() != null) {
+                        cmp = b2.getPublished_at().compareTo(b1.getPublished_at());
+                    }
+                }
+                return cmp;
+            })
+            .collect(Collectors.toList());
+
+        RestResponse<List<LastedBlogDTO>> response = new RestResponse<>();
+        response.setStatusCode(200);
+        response.setError(null);
+        response.setMessage("Call API Success");
+        response.setData(searchResults);
         return ResponseEntity.ok(response);
     }
 } 
