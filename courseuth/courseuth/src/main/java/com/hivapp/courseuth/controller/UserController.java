@@ -1,5 +1,9 @@
 package com.hivapp.courseuth.controller;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hivapp.courseuth.domain.User;
+import com.hivapp.courseuth.domain.dto.Meta;
 import com.hivapp.courseuth.domain.dto.ResCreateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUpdateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
@@ -27,7 +32,7 @@ import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api")
 public class UserController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
@@ -95,5 +100,26 @@ public class UserController {
             throw new IdInvalidException("User với id = " + user.getId() + " không tồn tại");
         }
         return ResponseEntity.ok(this.userService.convertToResUpdateUserDTO(ericUser));
+    }
+
+    @GetMapping("/search-users")
+    @ApiMessage("search users with filter and pagination")
+    public ResponseEntity<ResultPaginationDTO> searchUsers(
+            @Filter Specification<User> spec,
+            Pageable pageable) {
+        // Lấy danh sách user theo filter và phân trang
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        Page<User> pageUser = this.userService.findAllBySpecification(spec, pageable);
+        List<ResUserDTO> result = pageUser.getContent().stream()
+                .map(this.userService::convertToResUserDTO)
+                .collect(Collectors.toList());
+        Meta meta = new Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(pageUser.getTotalPages());
+        meta.setTotal(pageUser.getTotalElements());
+        rs.setMeta(meta);
+        rs.setResult(result);
+        return ResponseEntity.ok(rs);
     }
 }

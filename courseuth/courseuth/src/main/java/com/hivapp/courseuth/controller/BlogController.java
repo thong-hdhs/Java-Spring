@@ -2,9 +2,14 @@ package com.hivapp.courseuth.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,13 +26,16 @@ import com.hivapp.courseuth.domain.Blog;
 import com.hivapp.courseuth.domain.RestResponse;
 import com.hivapp.courseuth.domain.User;
 import com.hivapp.courseuth.domain.dto.BlogDTO;
-import com.hivapp.courseuth.domain.dto.LastedBlogDTO;
+import com.hivapp.courseuth.domain.dto.Meta;
+import com.hivapp.courseuth.domain.dto.MiniBlogDTO;
 import com.hivapp.courseuth.domain.dto.ResBlogDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
+import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
 import com.hivapp.courseuth.domain.dto.SearchBlogDTO;
 import com.hivapp.courseuth.service.BlogService;
 import com.hivapp.courseuth.service.UserService;
 import com.hivapp.courseuth.util.SecurityUtil;
+import com.turkraft.springfilter.boot.Filter;
 
 @RestController
 @RequestMapping("/api/blogs")
@@ -42,8 +51,14 @@ public class BlogController {
     private UserService userService;
 
     @GetMapping
-    public List<Blog> getAllBlogs() {
-        return blogService.getAllBlogs();
+    public ResultPaginationDTO getAllBlogs(@RequestParam("current") Optional<String> currentOptional, @RequestParam("pageSize") Optional<String> pageSizeOptional) {
+        // Lấy current và pageSize
+        String sCurrent = currentOptional.isPresent() ? currentOptional.get() : "";
+        String sPageSize = pageSizeOptional.isPresent() ? pageSizeOptional.get() : "";
+        int current = Integer.parseInt(sCurrent);
+        int pageSize = Integer.parseInt(sPageSize);
+        Pageable pageable = PageRequest.of(current - 1, pageSize);
+        return blogService.getAllBlogs(pageable);
     }
 
     @GetMapping("/{id}")
@@ -129,92 +144,42 @@ public class BlogController {
         }
     }
 
+    // Helper method để tạo ResultPaginationDTO
+    private ResultPaginationDTO createResultPaginationDTO(List<?> content, Pageable pageable, long total) {
+        ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
+        Meta meta = new Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setTotal(total);
+        meta.setPages((int) Math.ceil((double) total / pageable.getPageSize()));
+        resultPaginationDTO.setMeta(meta);
+        resultPaginationDTO.setResult(content);
+        return resultPaginationDTO;
+    }
+
     @GetMapping("/latest-blogs")
-    public ResponseEntity<RestResponse<List<LastedBlogDTO>>> getLastedBlogs() {
-        List<Blog> blogs = blogService.getAllBlogs();
-        List<LastedBlogDTO> lastedBlogs = blogs.stream()
-            .map(blog -> {
-                LastedBlogDTO lastedBlog = new LastedBlogDTO();
-                lastedBlog.setBlog_id(blog.getId());
-                lastedBlog.setTitle(blog.getTitle());
-                lastedBlog.setBanner(blog.getBanner());
-                lastedBlog.setDes(blog.getDes());
-                lastedBlog.setTags(blog.getTags());
-                lastedBlog.setPublished_at(blog.getPublished_at());
-
-                // Set activity
-                if (blog.getBlogActivity() != null) {
-                    LastedBlogDTO.BlogActivityDTO activity = new LastedBlogDTO.BlogActivityDTO();
-                    activity.setTotal_likes(blog.getBlogActivity().getTotal_likes());
-                    activity.setTotal_comments(blog.getBlogActivity().getTotal_comments());
-                    activity.setTotal_reads(blog.getBlogActivity().getTotal_views());
-                    activity.setTotal_parent_comments(blog.getBlogActivity().getTotal_parent_comments());
-                    lastedBlog.setActivity(activity);
-                }
-
-                // Set author
-                if (blog.getUser() != null) {
-                    LastedBlogDTO.AuthorDTO author = new LastedBlogDTO.AuthorDTO();
-                    LastedBlogDTO.AuthorDTO.PersonalInfoDTO personalInfo = new LastedBlogDTO.AuthorDTO.PersonalInfoDTO();
-                    personalInfo.setFullName(blog.getUser().getFullName());
-                    personalInfo.setEmail(blog.getUser().getEmail());
-                    // personalInfo.setGender(blog.getUser().getGender().toString());
-                    author.setPersonal_info(personalInfo);
-                    lastedBlog.setAuthor(author);
-                    
-                }
-
-                return lastedBlog;
-            })
+    public ResponseEntity<RestResponse<ResultPaginationDTO>> getLastedBlogs(Pageable pageable) {
+        ResultPaginationDTO resultPaginationDTO = blogService.getAllBlogs(pageable);
+        List<MiniBlogDTO> lastedBlogs = ((List<Blog>) resultPaginationDTO.getResult()).stream()
+            .map(MiniBlogDTO::fromBlog)
             .sorted((b1, b2) -> b2.getPublished_at().compareTo(b1.getPublished_at()))
             .collect(Collectors.toList());
 
-        RestResponse<List<LastedBlogDTO>> response = new RestResponse<>();
+        ResultPaginationDTO responseDTO = createResultPaginationDTO(lastedBlogs, pageable, resultPaginationDTO.getMeta().getTotal());
+        RestResponse<ResultPaginationDTO> response = new RestResponse<>();
         response.setStatusCode(200);
         response.setError(null);
         response.setMessage("Call API Success");
-        response.setData(lastedBlogs);
+        response.setData(responseDTO);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/trending-blogs")
-    public ResponseEntity<RestResponse<List<LastedBlogDTO>>> getTrendingBlogs() {
-        List<Blog> blogs = blogService.getAllBlogs();
-        List<LastedBlogDTO> trendingBlogs = blogs.stream()
-            .map(blog -> {
-                LastedBlogDTO lastedBlog = new LastedBlogDTO();
-                lastedBlog.setBlog_id(blog.getId());
-                lastedBlog.setTitle(blog.getTitle());
-                lastedBlog.setBanner(blog.getBanner());
-                lastedBlog.setDes(blog.getDes());
-                lastedBlog.setTags(blog.getTags());
-                lastedBlog.setPublished_at(blog.getPublished_at());
-
-                // Set activity
-                if (blog.getBlogActivity() != null) {
-                    LastedBlogDTO.BlogActivityDTO activity = new LastedBlogDTO.BlogActivityDTO();
-                    activity.setTotal_likes(blog.getBlogActivity().getTotal_likes());
-                    activity.setTotal_comments(blog.getBlogActivity().getTotal_comments());
-                    activity.setTotal_reads(blog.getBlogActivity().getTotal_views());
-                    activity.setTotal_parent_comments(blog.getBlogActivity().getTotal_parent_comments());
-                    lastedBlog.setActivity(activity);
-                }
-
-                // Set author
-                if (blog.getUser() != null) {
-                    LastedBlogDTO.AuthorDTO author = new LastedBlogDTO.AuthorDTO();
-                    LastedBlogDTO.AuthorDTO.PersonalInfoDTO personalInfo = new LastedBlogDTO.AuthorDTO.PersonalInfoDTO();
-                    personalInfo.setFullName(blog.getUser().getFullName());
-                    personalInfo.setEmail(blog.getUser().getEmail());
-                    // Nếu gender null thì để rỗng
-                    personalInfo.setGender(blog.getUser().getGender() != null ? blog.getUser().getGender().toString() : "");
-                    author.setPersonal_info(personalInfo);
-                    lastedBlog.setAuthor(author);
-                }
-                return lastedBlog;
-            })
+    public ResponseEntity<RestResponse<ResultPaginationDTO>> getTrendingBlogs(Pageable pageable) {
+        ResultPaginationDTO resultPaginationDTO = blogService.getAllBlogs(pageable);
+        List<MiniBlogDTO> trendingBlogs = ((List<Blog>) resultPaginationDTO.getResult()).stream()
+            .map(MiniBlogDTO::fromBlog)
             .sorted((b1, b2) -> {
-                // Sắp xếp theo tổng lượt xem, lượt like, thời gian phát hành
                 int cmp = Integer.compare(
                     b2.getActivity() != null && b2.getActivity().getTotal_reads() != null ? b2.getActivity().getTotal_reads().intValue() : 0,
                     b1.getActivity() != null && b1.getActivity().getTotal_reads() != null ? b1.getActivity().getTotal_reads().intValue() : 0
@@ -234,52 +199,25 @@ public class BlogController {
             })
             .collect(Collectors.toList());
 
-        RestResponse<List<LastedBlogDTO>> response = new RestResponse<>();
+        ResultPaginationDTO responseDTO = createResultPaginationDTO(trendingBlogs, pageable, resultPaginationDTO.getMeta().getTotal());
+        RestResponse<ResultPaginationDTO> response = new RestResponse<>();
         response.setStatusCode(200);
         response.setError(null);
         response.setMessage("Call API Success");
-        response.setData(trendingBlogs);
+        response.setData(responseDTO);
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/search-blogs")
-    public ResponseEntity<RestResponse<List<LastedBlogDTO>>> searchBlogs(@RequestBody SearchBlogDTO searchDTO) {
-        List<Blog> blogs = blogService.getAllBlogs();
-        List<LastedBlogDTO> searchResults = blogs.stream()
+    @PostMapping("/search-tags")
+    public ResponseEntity<RestResponse<ResultPaginationDTO>> searchBlogs(
+        @RequestBody SearchBlogDTO searchDTO,
+        Pageable pageable
+    ) {
+        ResultPaginationDTO resultPaginationDTO = blogService.getAllBlogs(pageable);
+        List<MiniBlogDTO> searchResults = ((List<Blog>) resultPaginationDTO.getResult()).stream()
             .filter(blog -> blog.getTags() != null && blog.getTags().contains(searchDTO.getTag()))
-            .map(blog -> {
-                LastedBlogDTO lastedBlog = new LastedBlogDTO();
-                lastedBlog.setBlog_id(blog.getId());
-                lastedBlog.setTitle(blog.getTitle());
-                lastedBlog.setBanner(blog.getBanner());
-                lastedBlog.setDes(blog.getDes());
-                lastedBlog.setTags(blog.getTags());
-                lastedBlog.setPublished_at(blog.getPublished_at());
-
-                // Set activity
-                if (blog.getBlogActivity() != null) {
-                    LastedBlogDTO.BlogActivityDTO activity = new LastedBlogDTO.BlogActivityDTO();
-                    activity.setTotal_likes(blog.getBlogActivity().getTotal_likes());
-                    activity.setTotal_comments(blog.getBlogActivity().getTotal_comments());
-                    activity.setTotal_reads(blog.getBlogActivity().getTotal_views());
-                    activity.setTotal_parent_comments(blog.getBlogActivity().getTotal_parent_comments());
-                    lastedBlog.setActivity(activity);
-                }
-
-                // Set author
-                if (blog.getUser() != null) {
-                    LastedBlogDTO.AuthorDTO author = new LastedBlogDTO.AuthorDTO();
-                    LastedBlogDTO.AuthorDTO.PersonalInfoDTO personalInfo = new LastedBlogDTO.AuthorDTO.PersonalInfoDTO();
-                    personalInfo.setFullName(blog.getUser().getFullName());
-                    personalInfo.setEmail(blog.getUser().getEmail());
-                    personalInfo.setGender(blog.getUser().getGender() != null ? blog.getUser().getGender().toString() : "");
-                    author.setPersonal_info(personalInfo);
-                    lastedBlog.setAuthor(author);
-                }
-                return lastedBlog;
-            })
+            .map(MiniBlogDTO::fromBlog)
             .sorted((b1, b2) -> {
-                // Sắp xếp theo tổng lượt xem, lượt like, thời gian phát hành
                 int cmp = Integer.compare(
                     b2.getActivity() != null && b2.getActivity().getTotal_reads() != null ? b2.getActivity().getTotal_reads().intValue() : 0,
                     b1.getActivity() != null && b1.getActivity().getTotal_reads() != null ? b1.getActivity().getTotal_reads().intValue() : 0
@@ -299,11 +237,31 @@ public class BlogController {
             })
             .collect(Collectors.toList());
 
-        RestResponse<List<LastedBlogDTO>> response = new RestResponse<>();
+        ResultPaginationDTO responseDTO = createResultPaginationDTO(searchResults, pageable, searchResults.size());
+        RestResponse<ResultPaginationDTO> response = new RestResponse<>();
         response.setStatusCode(200);
         response.setError(null);
         response.setMessage("Call API Success");
-        response.setData(searchResults);
+        response.setData(responseDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search-blogs")
+    public ResponseEntity<RestResponse<ResultPaginationDTO>> searchBlogsByFilter(
+        @Filter Specification<Blog> spec,
+        Pageable pageable
+    ) {
+        // Lấy danh sách blog theo filter và phân trang
+        Page<Blog> page = blogService.findAllBySpecification(spec, pageable);
+        List<MiniBlogDTO> blogs = page.getContent().stream()
+            .map(MiniBlogDTO::fromBlog)
+            .collect(Collectors.toList());
+        ResultPaginationDTO responseDTO = createResultPaginationDTO(blogs, pageable, page.getTotalElements());
+        RestResponse<ResultPaginationDTO> response = new RestResponse<>();
+        response.setStatusCode(200);
+        response.setError(null);
+        response.setMessage("Call API Success");
+        response.setData(responseDTO);
         return ResponseEntity.ok(response);
     }
 } 
