@@ -7,19 +7,25 @@ import BlogPostCard from "../components/blog-post.component";
 import MinimalBlogPost from "../components/nobanner-blog-post.component";
 import { activeTabLineRef, activeTabRef } from "../components/inpage-navigation.component";
 import NoDataMessage from "../components/nodata.component";
+import LoadMore from "../components/load-more.component";
 
 const HomePage = () => {
 
     let [blogs, setBlogs] = useState(null);
     let [trendingBlogs, setTrendingBlogs] = useState(null);
     let [pageState, setPageState] = useState("home");
+    let [currentPage, setCurrentPage] = useState(1);
+    let [pageSize] = useState(5);
+    let [totalPages, setTotalPages] = useState(1);
     let categories = ["Kiến thức HIV", "Phòng ngừa HIV", "Xét nghiệm HIV", "Chống kỳ thị HIV", "Điều trị ARV", "Sống chung với HIV", "Tin tức HIV"]
 
     const fetchLatestBlogs = () => {
-        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/api/blogs/latest-blogs")
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + `/api/blogs/latest-blogs?current=${currentPage}&pageSize=${pageSize}`)
             .then(({ data }) => {
-                const blogs = data.data.data;
-                setBlogs(blogs);
+                const newBlogs = data.data.data.result;
+                const meta = data.data.data.meta;
+                setBlogs(prevBlogs => currentPage === 1 ? newBlogs : [...prevBlogs, ...newBlogs]);
+                setTotalPages(meta.pages);
             })
             .catch((err) => {
                 console.log(err);
@@ -28,7 +34,7 @@ const HomePage = () => {
 
     const fetchBlogsByCategory = () => {
         console.log(pageState);
-        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/blogs/search-blogs", 
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + `/api/blogs/search-tags?page=${currentPage}&size=${pageSize}`, 
             { tag: pageState },
             {
                 headers: {
@@ -37,8 +43,10 @@ const HomePage = () => {
             }
         )
             .then(({ data }) => {
-                const blogs = data.data.data;
-                setBlogs(blogs);
+                const newBlogs = data.data.data.result;
+                const meta = data.data.data.meta;
+                setBlogs(prevBlogs => currentPage === 1 ? newBlogs : [...prevBlogs, ...newBlogs]);
+                setTotalPages(meta.pages);
                 console.log(data);
             })
             .catch((err) => {
@@ -47,9 +55,9 @@ const HomePage = () => {
     }
 
     const fetchTrendingBlogs = () => {
-        axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/api/blogs/trending-blogs")
+        axios.get(import.meta.env.VITE_SERVER_DOMAIN + `/api/blogs/trending-blogs?page=1&size=5`)
             .then(({ data }) => {
-                const trendingBlogs = data.data.data;
+                const trendingBlogs = data.data.data.result;
                 setTrendingBlogs(trendingBlogs);
             })
             .catch((err) => {
@@ -57,10 +65,15 @@ const HomePage = () => {
             })
     }
 
+    const handleLoadMore = () => {
+        setCurrentPage(prev => prev + 1);
+    }
+
     const loadBlogByCategory = (e) => {
         let category = e.target.innerText.toLowerCase();
         
         setBlogs(null);
+        setCurrentPage(1);
 
         if(pageState === category){
             setPageState("home");
@@ -68,15 +81,12 @@ const HomePage = () => {
         }
 
         setPageState(category);
-            
     }
 
     useEffect(() => {
-
         activeTabRef.current.click();
 
         if(pageState == "home"){
-
             fetchLatestBlogs();
         }else{
             fetchBlogsByCategory();
@@ -85,7 +95,7 @@ const HomePage = () => {
         if(!trendingBlogs){
             fetchTrendingBlogs();
         }
-    }, [pageState])
+    }, [pageState, currentPage])
 
     return (
         <AnimationWrapper>
@@ -113,6 +123,12 @@ const HomePage = () => {
                                     : <NoDataMessage message="Không có bài viết nào" />
                                 )
                             }
+
+                            <LoadMore 
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onLoadMore={handleLoadMore}
+                            />
                         </>
 
                         {
@@ -132,6 +148,8 @@ const HomePage = () => {
                                 : 
                                 <NoDataMessage message="Không có bài viết nào" />
                         }
+
+
                     </InPageNavigation>
 
                 </div>

@@ -1,14 +1,18 @@
 package com.hivapp.courseuth.service;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hivapp.courseuth.domain.Blog;
 import com.hivapp.courseuth.domain.BlogActivity;
+import com.hivapp.courseuth.domain.dto.Meta;
+import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
 import com.hivapp.courseuth.repository.BlogRepository;
 
 @Service
@@ -17,8 +21,25 @@ public class BlogService {
     @Autowired
     private BlogRepository blogRepository;
 
-    public List<Blog> getAllBlogs() {
-        return blogRepository.findAll();
+
+    public BlogService(BlogRepository blogRepository) {
+        this.blogRepository = blogRepository;
+    }
+
+    public ResultPaginationDTO getAllBlogs(Pageable pageable) {
+        Page<Blog> page = blogRepository.findAll(pageable);
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        Meta mt = new Meta();
+
+        mt.setPage(page.getNumber() + 1);
+        mt.setPageSize(page.getSize());
+        mt.setPages(page.getTotalPages());
+        mt.setTotal(page.getTotalElements());
+
+        rs.setMeta(mt);
+        rs.setResult(page.getContent());
+
+        return rs;
     }
 
     public Optional<Blog> getBlogById(Long id) {
@@ -57,5 +78,9 @@ public class BlogService {
         Blog blog = blogRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Blog not found with id: " + id));
         blogRepository.delete(blog);
+    }
+
+    public Page<Blog> findAllBySpecification(Specification<Blog> spec, Pageable pageable) {
+        return blogRepository.findAll(spec, pageable);
     }
 } 
