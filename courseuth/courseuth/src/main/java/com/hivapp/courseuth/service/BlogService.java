@@ -50,6 +50,7 @@ public class BlogService {
     public Blog createBlog(Blog blog) {
         // Tạo BlogActivity mới khi tạo Blog
         BlogActivity blogActivity = new BlogActivity();
+        blogActivity.setUser(blog.getUser());
         blogActivity.setTotal_likes(0);
         blogActivity.setTotal_comments(0);
         blogActivity.setTotal_views(0);

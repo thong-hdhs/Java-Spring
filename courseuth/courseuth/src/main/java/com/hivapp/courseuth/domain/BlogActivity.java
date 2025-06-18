@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,8 +17,12 @@ import lombok.Setter;
 public class BlogActivity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+    private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+    
     private Number total_likes;
     
     private Number total_comments;
@@ -24,5 +30,4 @@ public class BlogActivity {
     private Number total_views;
 
     private Number total_parent_comments;
-    
 }

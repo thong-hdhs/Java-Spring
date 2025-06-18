@@ -26,7 +26,7 @@ const InPageNavigation = ({ routes, defaultHidden = [], defaultActiveIndex = 0, 
 
     return (
         <>
-            <div className="relative mb-8 bg-white border-b border-grey flex flex-nowrap overflow-x-auto">
+            <div className="relative mb-8 bg-white border-b border-grey flex flex-nowrap overflow-x-auto md:justify-start justify-center">
                 {
                     routes.map((route, index) => {
                         return (
@@ -42,7 +42,7 @@ const InPageNavigation = ({ routes, defaultHidden = [], defaultActiveIndex = 0, 
                     })
                 }
 
-                <hr ref={activeTabLineRef} className="absolute bottom-0 duration-300"/>
+                <hr ref={activeTabLineRef} className="absolute bottom-0 duration-300 max-md:hidden"/>
             </div>
             {Array.isArray(children) ? children[inPgaeNavIndex] : children}
         </>
