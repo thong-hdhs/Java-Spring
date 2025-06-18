@@ -35,7 +35,8 @@ export default function GoogleOAuthHandler() {
                 toast.error('Có lỗi xảy ra khi đăng nhập');
                 navigate('/signin');
             }
-        } else {
+        } 
+        else {
             toast.error('Không nhận được thông tin đăng nhập');
             navigate('/signin');
         }

@@ -6,11 +6,7 @@ import { removeFromSession } from '../common/session'
 
 const UserNavigationPanel = () => {
     const context = useContext(UserContext);
-    console.log('UserContext value:', context);
-    
     const{userAuth:{user}, setUserAuth}= context;
-    console.log('userAuth value:', context.userAuth);
-
     const signOutUser = ()=> {
         removeFromSession('user');
         setUserAuth({accessToken: null})
@@ -27,7 +23,7 @@ const UserNavigationPanel = () => {
                 <p>Bài viết mới</p>
             </Link>
 
-            <Link to={`/users/${user?.email}`} className='link text-left pl-8 py-4'>
+            <Link to={`/user/${user?.id}`} className='link text-left pl-8 py-4'>
             Trang cá nhân
             </Link>
 

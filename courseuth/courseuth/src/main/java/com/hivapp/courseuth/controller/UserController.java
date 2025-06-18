@@ -19,11 +19,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hivapp.courseuth.domain.User;
+import com.hivapp.courseuth.domain.dto.GetUserProfileDTO;
 import com.hivapp.courseuth.domain.dto.Meta;
 import com.hivapp.courseuth.domain.dto.ResCreateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUpdateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
 import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
+import com.hivapp.courseuth.repository.BlogActivityRepository;
+import com.hivapp.courseuth.repository.BlogRepository;
 import com.hivapp.courseuth.service.UserService;
 import com.hivapp.courseuth.service.error.IdInvalidException;
 import com.hivapp.courseuth.util.anotation.ApiMessage;
@@ -36,10 +39,15 @@ import jakarta.validation.Valid;
 public class UserController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final BlogActivityRepository blogActivityRepository;
+    private final BlogRepository blogRepository;
 
-    public UserController(UserService userService, PasswordEncoder passwordEncoder) {
+    public UserController(UserService userService, PasswordEncoder passwordEncoder, 
+            BlogActivityRepository blogActivityRepository, BlogRepository blogRepository) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.blogActivityRepository = blogActivityRepository;
+        this.blogRepository = blogRepository;
     }
 
     @PostMapping("/users")
@@ -72,15 +80,28 @@ public class UserController {
     }
 
     @GetMapping("/users/{id}")
-    @ApiMessage("fetch user by id")
-    public ResponseEntity<ResUserDTO> getUserById(@PathVariable("id") Long id) throws IdInvalidException {
+    @ApiMessage("fetch user profile by id")
+    public ResponseEntity<GetUserProfileDTO> getUserById(@PathVariable("id") Long id) throws IdInvalidException {
         User fetchUser = this.userService.fetchUserById(id);
         if (fetchUser == null) {
             throw new IdInvalidException("User với id = " + id + " không tồn tại");
         }
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(this.userService.convertToResUserDTO(fetchUser));
+        GetUserProfileDTO profileDTO = new GetUserProfileDTO();
+        profileDTO.setUserInfo(this.userService.convertToResUserDTO(fetchUser));
+
+        // Lấy thông tin hoạt động blog của user
+        Number totalLikes = blogActivityRepository.sumTotalLikesByUserId(id);
+        Number totalViews = blogActivityRepository.sumTotalViewsByUserId(id);
+        Long totalPosts = blogRepository.countByUserId(id);
+        Long totalActivities = blogActivityRepository.countBlogsByUserId(id);
+
+        profileDTO.setTotalLikes(totalLikes != null ? totalLikes.longValue() : 0L);
+        profileDTO.setTotalViews(totalViews != null ? totalViews.longValue() : 0L);
+        profileDTO.setTotalPosts(totalPosts != null ? totalPosts : 0L);
+        profileDTO.setTotalActivities(totalActivities != null ? totalActivities : 0L);
+
+        return ResponseEntity.status(HttpStatus.OK).body(profileDTO);
     }
 
     @GetMapping("/users")

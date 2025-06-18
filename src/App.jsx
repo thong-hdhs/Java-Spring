@@ -8,6 +8,8 @@ import Editor from "./pages/editor.pages";
 import { Toaster } from "react-hot-toast";
 import HomePage from "./pages/home.page";
 import SearchPage from "./pages/search.page";
+import PageNotFound from "./pages/404.page";
+import ProfilePage from "./pages/profile.page";
 
 export const UserContext = createContext({});
 
@@ -22,6 +24,7 @@ const App = () => {
       setUserAuth({ accessToken: null });
     }
   }, []);
+  console.log(userAuth)
 
   return (
     <UserContext.Provider value={{ userAuth, setUserAuth }}>
@@ -34,6 +37,8 @@ const App = () => {
           <Route path='signup' element={<UserAuthForm type='sign-up' />} />
           <Route path='auth/google' element={<GoogleOAuthHandler />} />
           <Route path='search/:query' element={<SearchPage />} />
+          <Route path="user/:id" element={<ProfilePage />} />
+          <Route path="*" element={<PageNotFound />} />
         </Route>
       </Routes>
     </UserContext.Provider>
