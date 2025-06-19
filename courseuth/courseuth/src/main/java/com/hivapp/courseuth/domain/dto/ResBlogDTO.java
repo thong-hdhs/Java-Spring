@@ -1,5 +1,6 @@
 package com.hivapp.courseuth.domain.dto;
 
+import java.time.Instant;
 import java.util.List;
 
 import lombok.Getter;
@@ -14,6 +15,7 @@ public class ResBlogDTO {
     private String des;
     private String content;
     private List<String> tags;
+    private Instant published_at;
     private Object blogActivity;
     private ResUserDTO user;
 } 

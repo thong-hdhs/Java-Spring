@@ -23,11 +23,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivapp.courseuth.domain.Blog;
+import com.hivapp.courseuth.domain.BlogActivity;
 import com.hivapp.courseuth.domain.RestResponse;
 import com.hivapp.courseuth.domain.User;
 import com.hivapp.courseuth.domain.dto.BlogDTO;
 import com.hivapp.courseuth.domain.dto.Meta;
 import com.hivapp.courseuth.domain.dto.MiniBlogDTO;
+import com.hivapp.courseuth.domain.dto.ResBlogActivityDTO;
 import com.hivapp.courseuth.domain.dto.ResBlogDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
 import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
@@ -72,7 +74,17 @@ public class BlogController {
                     resBlog.setDes(blog.getDes());
                     resBlog.setContent(blog.getContent());
                     resBlog.setTags(blog.getTags());
-                    resBlog.setBlogActivity(blog.getBlogActivity());
+                    resBlog.setPublished_at(blog.getPublished_at());
+                    if (blog.getBlogActivity() != null) {
+                        BlogActivity activity = blog.getBlogActivity();
+                        ResBlogActivityDTO activityDTO = new ResBlogActivityDTO();
+                        activityDTO.setId(activity.getId());
+                        activityDTO.setTotal_likes(activity.getTotal_likes());
+                        activityDTO.setTotal_comments(activity.getTotal_comments());
+                        activityDTO.setTotal_views(activity.getTotal_views());
+                        activityDTO.setTotal_parent_comments(activity.getTotal_parent_comments());
+                        resBlog.setBlogActivity(activityDTO);
+                    }
                     if (blog.getUser() != null) {
                         ResUserDTO resUser = userService.convertToResUserDTO(blog.getUser());
                         resBlog.setUser(resUser);
@@ -108,7 +120,17 @@ public class BlogController {
         resBlog.setDes(savedBlog.getDes());
         resBlog.setContent(savedBlog.getContent());
         resBlog.setTags(savedBlog.getTags());
-        resBlog.setBlogActivity(savedBlog.getBlogActivity());
+        resBlog.setPublished_at(savedBlog.getPublished_at());
+        if (savedBlog.getBlogActivity() != null) {
+            BlogActivity activity = savedBlog.getBlogActivity();
+            ResBlogActivityDTO activityDTO = new ResBlogActivityDTO();
+            activityDTO.setId(activity.getId());
+            activityDTO.setTotal_likes(activity.getTotal_likes());
+            activityDTO.setTotal_comments(activity.getTotal_comments());
+            activityDTO.setTotal_views(activity.getTotal_views());
+            activityDTO.setTotal_parent_comments(activity.getTotal_parent_comments());
+            resBlog.setBlogActivity(activityDTO);
+        }
         resBlog.setUser(userService.convertToResUserDTO(user));
         RestResponse<ResBlogDTO> response = new RestResponse<>();
         response.setStatusCode(200);
