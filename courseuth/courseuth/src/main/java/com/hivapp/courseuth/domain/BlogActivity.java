@@ -10,6 +10,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+
+//total blog activity
 @Entity
 @Table(name = "blog_activities")
 @Getter

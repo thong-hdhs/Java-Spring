@@ -78,7 +78,7 @@ public class SecurityConfiguration {
                 "/api/blogs/latest-blogs",
                 "/api/blogs/trending-blogs",
                 "/api/blogs/search-blogs",
-                "/api/blogs/get-blog-by-id",
+                "/api/blogs/{id}",
                 "/api/blogs/search-tags",
                 "/api/search-users").permitAll()
                 .anyRequest().authenticated()

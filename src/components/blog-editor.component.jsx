@@ -94,7 +94,7 @@ const BlogEditor = () => {
                     <div className="mx-auto max-w-[900px] w-full">
                         <div className="reative aspect-video bg-white border-4 border-grey hover:opacity-80">
                             <label htmlFor="uploadBanner">
-                                <img src={defaultBanner} alt="banner" 
+                                <img src={banner ? banner : defaultBanner} alt="banner" 
                                     className="z-20"
                                 />
                                 <input 
