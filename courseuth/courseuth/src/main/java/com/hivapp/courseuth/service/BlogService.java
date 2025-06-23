@@ -1,5 +1,7 @@
 package com.hivapp.courseuth.service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,15 +13,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hivapp.courseuth.domain.Blog;
 import com.hivapp.courseuth.domain.BlogActivity;
+import com.hivapp.courseuth.domain.BlogLike;
+import com.hivapp.courseuth.domain.User;
 import com.hivapp.courseuth.domain.dto.Meta;
 import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
+import com.hivapp.courseuth.repository.BlogActivityRepository;
+import com.hivapp.courseuth.repository.BlogLikeRepository;
 import com.hivapp.courseuth.repository.BlogRepository;
+import com.hivapp.courseuth.repository.UserRepository;
 
 @Service
 public class BlogService {
     
     @Autowired
     private BlogRepository blogRepository;
+
+    @Autowired
+    private BlogLikeRepository blogLikeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BlogActivityRepository blogActivityRepository;
 
 
     public BlogService(BlogRepository blogRepository) {
@@ -52,12 +68,44 @@ public class BlogService {
         BlogActivity blogActivity = new BlogActivity();
         blogActivity.setUser(blog.getUser());
         blogActivity.setTotal_likes(0);
-        blogActivity.setTotal_comments(0);
-        blogActivity.setTotal_views(0);
-        blogActivity.setTotal_parent_comments(0);
         blog.setBlogActivity(blogActivity);
         
         return blogRepository.save(blog);
+    }
+
+    @Transactional
+    public Map<String, Object> likeUnlikeBlog(Long blogId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        Blog blog = blogRepository.findById(blogId)
+                .orElseThrow(() -> new RuntimeException("Blog not found with id: " + blogId));
+
+        Optional<BlogLike> existingLike = blogLikeRepository.findByUserAndBlog(user, blog);
+        
+        BlogActivity blogActivity = blog.getBlogActivity();
+        boolean isLiked;
+
+        if (existingLike.isPresent()) {
+            // User đã like, bây giờ unlike
+            blogLikeRepository.delete(existingLike.get());
+            blogActivity.setTotal_likes(blogActivity.getTotal_likes() - 1);
+            isLiked = false;
+        } else {
+            // User chưa like, bây giờ like
+            BlogLike newLike = new BlogLike(user, blog);
+            blogLikeRepository.save(newLike);
+            blogActivity.setTotal_likes(blogActivity.getTotal_likes() + 1);
+            isLiked = true;
+        }
+
+        blogActivityRepository.save(blogActivity); // Lưu lại để cập nhật total_likes
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("total_likes", blogActivity.getTotal_likes());
+        response.put("isLiked", isLiked);
+        
+        return response;
     }
 
     @Transactional

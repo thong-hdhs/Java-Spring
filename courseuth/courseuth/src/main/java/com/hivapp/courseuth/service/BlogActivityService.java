@@ -24,7 +24,7 @@ public class BlogActivityService {
         BlogActivity activity = blogActivityRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("BlogActivity not found with id: " + id));
         
-        activity.setTotal_likes(activity.getTotal_likes().intValue() + increment);
+        activity.setTotal_likes(activity.getTotal_likes() + increment);
         return blogActivityRepository.save(activity);
     }
 
@@ -33,7 +33,7 @@ public class BlogActivityService {
         BlogActivity activity = blogActivityRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("BlogActivity not found with id: " + id));
         
-        activity.setTotal_comments(activity.getTotal_comments().intValue() + increment);
+        activity.setTotal_comments(activity.getTotal_comments() + increment);
         return blogActivityRepository.save(activity);
     }
 
@@ -42,7 +42,7 @@ public class BlogActivityService {
         BlogActivity activity = blogActivityRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("BlogActivity not found with id: " + id));
         
-        activity.setTotal_views(activity.getTotal_views().intValue() + increment);
+        activity.setTotal_views(activity.getTotal_views() + increment);
         return blogActivityRepository.save(activity);
     }
 
@@ -51,7 +51,7 @@ public class BlogActivityService {
         BlogActivity activity = blogActivityRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("BlogActivity not found with id: " + id));
         
-        activity.setTotal_parent_comments(activity.getTotal_parent_comments().intValue() + increment);
+        activity.setTotal_parent_comments(activity.getTotal_parent_comments() + increment);
         return blogActivityRepository.save(activity);
     }
 } 

@@ -7,7 +7,10 @@ import axios from "axios";
 import { UserContext } from "../App";
 import { Navigate, useNavigate } from "react-router-dom";
 
-const PublishForm = () => {
+const PublishForm = ({id}) => {
+    const numId = Number(id);
+
+    const isUpdate = numId ? true : false;
 
     const charLimit = 200;
     const tagLimit = 10;
@@ -76,8 +79,9 @@ const PublishForm = () => {
             title, banner, des, content, tags,
             // draft: true,
         }
-
-        console.log(blogObj)
+        
+        // Thêm log kiểm tra dữ liệu gửi lên
+        console.log("blogObj gửi lên:", blogObj);
 
         const userString = sessionStorage.getItem('user');
         if (userString) {
@@ -85,10 +89,11 @@ const PublishForm = () => {
             const accessToken = userData.accessToken;
         
 
-            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/blogs", blogObj, {
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`
+            if(!isUpdate){
+                axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/api/blogs", blogObj, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${accessToken}`
                 }
             })
             .then(()=>{
@@ -104,8 +109,27 @@ const PublishForm = () => {
                 e.target.classList.remove("disabled");
                 toast.dismiss(loadingToast);
                 return toast.error(response.data.message)
-            })
+            })}
 
+            else{
+                axios.put(import.meta.env.VITE_SERVER_DOMAIN + `/api/blogs/${numId}`, blogObj, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${accessToken}`
+                }
+            })
+            .then(()=>{
+                e.target.classList.remove("disabled");
+                toast.dismiss(loadingToast);
+                toast.success("Cập nhật bài viết thành công")
+            })
+            .catch((err) => {
+                e.target.classList.remove("disabled");
+                toast.dismiss(loadingToast);
+                console.log("Lỗi cập nhật:", err.response ? err.response.data : err);
+                return toast.error(err.response?.data?.message || "Có lỗi xảy ra");
+            })
+            }
         }
         
         

@@ -31,7 +31,7 @@ const Navbar = () => {
     const {userAuth, userAuth:{accessToken, profileImg}}= useContext(UserContext);
   return (
     <>
-    <nav className='navbar'>
+    <nav className='navbar z-50'>
         <Link to="/" className='flex-none w-10'>
         <   img src={logo} className='flex-none w-10' alt="" />
         </Link>

@@ -2,6 +2,7 @@ package com.hivapp.courseuth.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ import com.hivapp.courseuth.domain.dto.ResBlogDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
 import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
 import com.hivapp.courseuth.domain.dto.SearchBlogDTO;
+import com.hivapp.courseuth.repository.BlogLikeRepository;
 import com.hivapp.courseuth.service.BlogService;
 import com.hivapp.courseuth.service.UserService;
 import com.hivapp.courseuth.util.SecurityUtil;
@@ -52,6 +54,9 @@ public class BlogController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private BlogLikeRepository blogLikeRepository;
+
     @GetMapping
     public ResultPaginationDTO getAllBlogs(@RequestParam("current") Optional<String> currentOptional, @RequestParam("pageSize") Optional<String> pageSizeOptional) {
         // Lấy current và pageSize
@@ -65,38 +70,56 @@ public class BlogController {
 
     @GetMapping("/{id}")
     public ResponseEntity<RestResponse<ResBlogDTO>> getBlogById(@PathVariable Long id) {
-        return blogService.getBlogById(id)
-                .map(blog -> {
-                    ResBlogDTO resBlog = new ResBlogDTO();
-                    resBlog.setId(blog.getId());
-                    resBlog.setTitle(blog.getTitle());
-                    resBlog.setBanner(blog.getBanner());
-                    resBlog.setDes(blog.getDes());
-                    resBlog.setContent(blog.getContent());
-                    resBlog.setTags(blog.getTags());
-                    resBlog.setPublished_at(blog.getPublished_at());
-                    if (blog.getBlogActivity() != null) {
-                        BlogActivity activity = blog.getBlogActivity();
-                        ResBlogActivityDTO activityDTO = new ResBlogActivityDTO();
-                        activityDTO.setId(activity.getId());
-                        activityDTO.setTotal_likes(activity.getTotal_likes());
-                        activityDTO.setTotal_comments(activity.getTotal_comments());
-                        activityDTO.setTotal_views(activity.getTotal_views());
-                        activityDTO.setTotal_parent_comments(activity.getTotal_parent_comments());
-                        resBlog.setBlogActivity(activityDTO);
-                    }
-                    if (blog.getUser() != null) {
-                        ResUserDTO resUser = userService.convertToResUserDTO(blog.getUser());
-                        resBlog.setUser(resUser);
-                    }
-                    RestResponse<ResBlogDTO> response = new RestResponse<>();
-                    response.setStatusCode(200);
-                    response.setError(null);
-                    response.setMessage("Call API Success");
-                    response.setData(resBlog);
-                    return ResponseEntity.ok(response);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Optional<Blog> blogOptional = blogService.getBlogById(id);
+        if (!blogOptional.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Blog blog = blogOptional.get();
+        ResBlogDTO resBlog = new ResBlogDTO();
+        resBlog.setId(blog.getId());
+        resBlog.setTitle(blog.getTitle());
+        resBlog.setBanner(blog.getBanner());
+        resBlog.setDes(blog.getDes());
+        resBlog.setContent(blog.getContent());
+        resBlog.setTags(blog.getTags());
+        resBlog.setPublished_at(blog.getPublished_at());
+
+        // Set BlogActivity
+        if (blog.getBlogActivity() != null) {
+            BlogActivity activity = blog.getBlogActivity();
+            ResBlogActivityDTO activityDTO = new ResBlogActivityDTO();
+            activityDTO.setId(activity.getId());
+            activityDTO.setTotal_likes(activity.getTotal_likes());
+            activityDTO.setTotal_comments(activity.getTotal_comments());
+            activityDTO.setTotal_views(activity.getTotal_views());
+            activityDTO.setTotal_parent_comments(activity.getTotal_parent_comments());
+            resBlog.setBlogActivity(activityDTO);
+        }
+
+        // Set User
+        if (blog.getUser() != null) {
+            ResUserDTO resUser = userService.convertToResUserDTO(blog.getUser());
+            resBlog.setUser(resUser);
+        }
+        
+        // Set isLikedByUser
+        boolean isLiked = false;
+        Optional<String> currentUserLogin = SecurityUtil.getCurrentUserLogin();
+        if (currentUserLogin.isPresent()) {
+            User user = userService.handleGetUserByEmail(currentUserLogin.get());
+            if (user != null) {
+                isLiked = blogLikeRepository.findByUserAndBlog(user, blog).isPresent();
+            }
+        }
+        resBlog.setLikedByUser(isLiked);
+
+        RestResponse<ResBlogDTO> response = new RestResponse<>();
+        response.setStatusCode(200);
+        response.setError(null);
+        response.setMessage("Call API Success");
+        response.setData(resBlog);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
@@ -284,6 +307,50 @@ public class BlogController {
         response.setError(null);
         response.setMessage("Call API Success");
         response.setData(responseDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Map<String, Object>> likeBlog(@PathVariable Long id) {
+        String email = SecurityUtil.getCurrentUserLogin().orElse(null);
+        if (email == null) {
+            return ResponseEntity.status(401).build(); // Unauthorized
+        }
+        User user = userService.handleGetUserByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(401).build(); // User not found, treat as unauthorized
+        }
+
+        Long userId = user.getId();
+        Map<String, Object> response = blogService.likeUnlikeBlog(id, userId);
+        return ResponseEntity.ok(response);
+    }
+
+    // Endpoint kiểm tra user hiện tại đã like blog này chưa
+    @GetMapping("/{id}/islike")
+    public ResponseEntity<Map<String, Boolean>> isBlogLikedByUser(@PathVariable Long id) {
+        // Lấy email user hiện tại từ SecurityUtil
+        String email = SecurityUtil.getCurrentUserLogin().orElse(null);
+        if (email == null) {
+            // Nếu chưa đăng nhập, trả về 401
+            return ResponseEntity.status(401).build();
+        }
+        // Lấy user từ email
+        User user = userService.handleGetUserByEmail(email);
+        if (user == null) {
+            // Nếu không tìm thấy user, trả về 401
+            return ResponseEntity.status(401).build();
+        }
+        // Kiểm tra user đã like blog này chưa
+        Optional<Blog> blogOptional = blogService.getBlogById(id);
+        if (!blogOptional.isPresent()) {
+            // Nếu không tìm thấy blog, trả về 404
+            return ResponseEntity.notFound().build();
+        }
+        Blog blog = blogOptional.get();
+        boolean isLiked = blogLikeRepository.findByUserAndBlog(user, blog).isPresent();
+        // Trả về kết quả
+        Map<String, Boolean> response = Map.of("isLiked", isLiked);
         return ResponseEntity.ok(response);
     }
 } 

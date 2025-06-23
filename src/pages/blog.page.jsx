@@ -27,6 +27,8 @@ const BlogPage = () => {
     const [blog, setBlog] = useState(BlogStructure);
     let {title, content, user:{fullName, email}, tags, published_at, id, des, blogActivity, banner} = blog;
     const [loading, setLoading] = useState(true);
+    const [isLikeByUser, setIsLikeByUser] = useState(false);
+    
     const fetchBlog = ()=>{
         axios.get(import.meta.env.VITE_SERVER_DOMAIN + `/api/blogs/${blog_id}`  )
         .then((res)=>{
@@ -35,6 +37,7 @@ const BlogPage = () => {
             console.log(blog);
             setBlog(blog);
             setLoading(false);
+            setIsLikeByUser(blog.likedByUser);
         })
         .catch((err)=>{
             console.log(err);
@@ -56,6 +59,7 @@ const BlogPage = () => {
 
     let userName = getUserNameFormEmail();
 
+    console.log("blog",isLikeByUser);
     useEffect(()=>{
         fetchBlog();
     },[])
@@ -66,7 +70,7 @@ const BlogPage = () => {
                     loading ? <Loader/> 
                     :
 
-                    <BlogContext.Provider value={{blog, setBlog}}>
+                    <BlogContext.Provider value={{blog, setBlog, isLikeByUser, setIsLikeByUser}}>
 
                     <div className="max-w-[900px] center py-10 max-lg:px-[5vw]">
                         <img src={banner} alt={title} className="aspect-video" />

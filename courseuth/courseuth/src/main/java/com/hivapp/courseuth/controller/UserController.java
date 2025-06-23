@@ -1,6 +1,8 @@
 package com.hivapp.courseuth.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -8,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,13 +26,16 @@ import com.hivapp.courseuth.domain.User;
 import com.hivapp.courseuth.domain.dto.GetUserProfileDTO;
 import com.hivapp.courseuth.domain.dto.Meta;
 import com.hivapp.courseuth.domain.dto.ResCreateUserDTO;
+import com.hivapp.courseuth.domain.dto.ResLoginDTO;
 import com.hivapp.courseuth.domain.dto.ResUpdateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
+import com.hivapp.courseuth.domain.dto.ResetPasswordDTO;
 import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
 import com.hivapp.courseuth.repository.BlogActivityRepository;
 import com.hivapp.courseuth.repository.BlogRepository;
 import com.hivapp.courseuth.service.UserService;
 import com.hivapp.courseuth.service.error.IdInvalidException;
+import com.hivapp.courseuth.util.SecurityUtil;
 import com.hivapp.courseuth.util.anotation.ApiMessage;
 import com.turkraft.springfilter.boot.Filter;
 
@@ -41,13 +48,15 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final BlogActivityRepository blogActivityRepository;
     private final BlogRepository blogRepository;
+    private final SecurityUtil securityUtil;
 
     public UserController(UserService userService, PasswordEncoder passwordEncoder, 
-            BlogActivityRepository blogActivityRepository, BlogRepository blogRepository) {
+            BlogActivityRepository blogActivityRepository, BlogRepository blogRepository, SecurityUtil securityUtil) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.blogActivityRepository = blogActivityRepository;
         this.blogRepository = blogRepository;
+        this.securityUtil = securityUtil;
     }
 
     @PostMapping("/users")
@@ -92,12 +101,10 @@ public class UserController {
 
         // Lấy thông tin hoạt động blog của user
         Number totalLikes = blogActivityRepository.sumTotalLikesByUserId(id);
-        Number totalViews = blogActivityRepository.sumTotalViewsByUserId(id);
         Long totalPosts = blogRepository.countByUserId(id);
         Long totalActivities = blogActivityRepository.countBlogsByUserId(id);
 
         profileDTO.setTotalLikes(totalLikes != null ? totalLikes.longValue() : 0L);
-        profileDTO.setTotalViews(totalViews != null ? totalViews.longValue() : 0L);
         profileDTO.setTotalPosts(totalPosts != null ? totalPosts : 0L);
         profileDTO.setTotalActivities(totalActivities != null ? totalActivities : 0L);
 
@@ -142,5 +149,46 @@ public class UserController {
         rs.setMeta(meta);
         rs.setResult(result);
         return ResponseEntity.ok(rs);
+    }
+
+    @PutMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO) {
+        // Lấy user theo email
+        User user = userService.handleGetUserByEmail(resetPasswordDTO.getEmail());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy tài khoản!");
+        }
+
+        // Kiểm tra nếu user đăng nhập bằng Google (không có trường provider nên kiểm tra password null hoặc rỗng)
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Tài khoản bạn đăng nhập bằng Google, không thể thay đổi!");
+        }
+
+        // Kiểm tra mật khẩu hiện tại
+        if (!passwordEncoder.matches(resetPasswordDTO.getCurrPass(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Mật khẩu hiện tại không đúng!");
+        }
+
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(resetPasswordDTO.getNewPass()));
+        userService.handleUpdateUser(user);
+
+        // Tạo accessToken mới (dùng SecurityUtil)
+        ResUserDTO resUserDTO = userService.convertToResUserDTO(user);
+        // Tạo ResLoginDTO.UserLogin để truyền vào createAccessToken
+        ResLoginDTO resLoginDTO = new ResLoginDTO();
+        ResLoginDTO.UserLogin userLogin = resLoginDTO.new UserLogin(
+            user.getId(), user.getFullName(), user.getEmail()
+        );
+        // Authentication cho accessToken
+        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getEmail(), null);
+        String accessToken = securityUtil.createAccessToken(authentication, userLogin);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("user", resUserDTO);
+        response.put("accessToken", accessToken);
+        return ResponseEntity.ok(response);
     }
 }

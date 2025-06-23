@@ -18,4 +18,5 @@ public class ResBlogDTO {
     private Instant published_at;
     private Object blogActivity;
     private ResUserDTO user;
+    private boolean isLikedByUser;
 } 

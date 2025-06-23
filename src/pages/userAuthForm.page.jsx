@@ -122,8 +122,8 @@ const UserAuthForm = ({ type }) => {
         e.preventDefault();
         let serverRoute = type === 'sign-in' ? '/auth/login' : '/auth/register';
         let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        let passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/; // At least 8 characters, one letter and one number
-        let fullnameRegex = /^[a-zA-Z\s]{3,}$/; // At least 3 characters, letters and spaces only
+        let passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        let fullnameRegex = /^[a-zA-Z\s]{3,}$/;
 
         //form data
         let form = new FormData(formElement);
@@ -158,7 +158,7 @@ const UserAuthForm = ({ type }) => {
         }
 
         if (!passwordRegex.test(password)) {
-            return toast.error('Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái và số');
+            return toast.error('Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái, số và ký tự đặc biệt');
         }
 
         userAuthThroughServer(serverRoute, formData);

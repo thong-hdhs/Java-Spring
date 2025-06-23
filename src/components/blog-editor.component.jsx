@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import logo from "../imgs/logo.png";
 import AnimationWrapper from "../common/page-animation";
 import defaultBanner from "../imgs/blog banner.png";
@@ -8,14 +8,15 @@ import EditorJS from "@editorjs/editorjs";
 import { tools } from "./tools.component";
 import toast from "react-hot-toast";
 
-const BlogEditor = () => {
-
+const BlogEditor = ({dataUpdate}) => {
+   
+    let {blog_id} = useParams();
     let {blog, blog:{title, banner, content, tags, des}, setBlog, textEditor, setTextEditor, textEditorState, setEditorState} = useContext(EditorContext);
 
     useEffect(() => {
         setTextEditor(new EditorJS({
             holderId: "textEditor",
-            data:content,
+            data: dataUpdate ? dataUpdate : content,
             tools: tools, 
             placeholder: "Nội dung bài viết",
         }))

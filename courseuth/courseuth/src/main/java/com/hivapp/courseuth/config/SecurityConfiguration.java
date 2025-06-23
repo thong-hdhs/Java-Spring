@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -69,18 +70,17 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/login",
-                "/auth/refresh",
-                "/auth/register",
-                "/auth/google",
-                "/auth/google/callback",
-                "/",
-                "/api/blogs/latest-blogs",
-                "/api/blogs/trending-blogs",
-                "/api/blogs/search-blogs",
-                "/api/blogs/{id}",
-                "/api/blogs/search-tags",
-                "/api/search-users").permitAll()
+                .requestMatchers(
+                    "/auth/**",
+                    "/",
+                    "/api/blogs/latest-blogs",
+                    "/api/blogs/trending-blogs",
+                    "/api/blogs/search-blogs",
+                    "/api/blogs/{id}",
+                    "/api/blogs/search-tags",
+                    "/api/search-users"
+                ).permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/blogs/*/like").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

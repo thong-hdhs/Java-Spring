@@ -25,11 +25,11 @@ public class BlogActivity {
     @JoinColumn(name = "user_id")
     private User user;
     
-    private Number total_likes;
+    private long total_likes;
     
-    private Number total_comments;
+    private long total_comments;
 
-    private Number total_views;
+    private long total_views;
 
-    private Number total_parent_comments;
+    private long total_parent_comments;
 }

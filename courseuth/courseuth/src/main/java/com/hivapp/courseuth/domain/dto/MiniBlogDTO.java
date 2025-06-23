@@ -55,9 +55,6 @@ public class MiniBlogDTO {
         if (blog.getBlogActivity() != null) {
             BlogActivityDTO activity = new BlogActivityDTO();
             activity.setTotal_likes(blog.getBlogActivity().getTotal_likes());
-            activity.setTotal_comments(blog.getBlogActivity().getTotal_comments());
-            activity.setTotal_reads(blog.getBlogActivity().getTotal_views());
-            activity.setTotal_parent_comments(blog.getBlogActivity().getTotal_parent_comments());
             miniBlog.setActivity(activity);
         }
 
