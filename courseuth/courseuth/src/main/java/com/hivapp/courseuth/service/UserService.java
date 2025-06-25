@@ -8,21 +8,33 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.hivapp.courseuth.domain.Blog;
 import com.hivapp.courseuth.domain.User;
 import com.hivapp.courseuth.domain.dto.Meta;
 import com.hivapp.courseuth.domain.dto.ResCreateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUpdateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
 import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
+import com.hivapp.courseuth.repository.BlogActivityRepository;
+import com.hivapp.courseuth.repository.BlogLikeRepository;
+import com.hivapp.courseuth.repository.BlogRepository;
 import com.hivapp.courseuth.repository.UserRepository;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final BlogRepository blogRepository;
+    private final BlogLikeRepository blogLikeRepository;
+    private final BlogActivityRepository blogActivityRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, BlogRepository blogRepository, 
+                      BlogLikeRepository blogLikeRepository, BlogActivityRepository blogActivityRepository) {
         this.userRepository = userRepository;
+        this.blogRepository = blogRepository;
+        this.blogLikeRepository = blogLikeRepository;
+        this.blogActivityRepository = blogActivityRepository;
     }
 
     public User handleCreateUser(User user) {
@@ -70,8 +82,31 @@ public class UserService {
         return null;
     }
 
+    @Transactional
     public void handleDeleteUser(Long id) {
-        this.userRepository.deleteById(id);
+        // Lấy user cần xóa
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        // 1. Xóa tất cả BlogLike của user này
+        blogLikeRepository.deleteByUserId(id);
+
+        // 2. Xóa tất cả BlogActivity của user này
+        blogActivityRepository.deleteByUserId(id);
+
+        // 3. Xóa tất cả Blog của user này (cùng với BlogActivity liên quan)
+        List<Blog> userBlogs = blogRepository.findByUserId(id);
+        
+        for (Blog blog : userBlogs) {
+            // Xóa tất cả like của blog này
+            blogLikeRepository.deleteByBlogId(blog.getId());
+            
+            // Xóa blog (BlogActivity sẽ được xóa tự động do cascade)
+            blogRepository.delete(blog);
+        }
+
+        // 4. Cuối cùng xóa User
+        userRepository.delete(user);
     }
 
     public ResUserDTO convertToResUserDTO(User user) {
@@ -83,6 +118,7 @@ public class UserService {
         dto.setAge(user.getAge());
         dto.setGender(user.getGender());
         dto.setAddress(user.getAddress());
+        dto.setRole(user.getRole());
         dto.setCreateAt(user.getCreateAt());
         dto.setUpdateAt(user.getUpdateAt());
         dto.setCreateBy(user.getCreateBy());

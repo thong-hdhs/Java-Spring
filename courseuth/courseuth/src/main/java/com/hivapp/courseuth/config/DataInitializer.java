@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
         if (!userService.isEmailExit("admin3@ut.edu.vn")) {
             User admin = new User();
             admin.setEmail("admin3@ut.edu.vn");
-            admin.setPassword(passwordEncoder.encode("Thideptrai21"));
+            admin.setPassword(passwordEncoder.encode("Quangthi2729!"));
             admin.setFullName("Administrator");
             admin.setRole(RoleEnum.ADMIN);
             userService.handleCreateUser(admin);

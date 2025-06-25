@@ -180,10 +180,10 @@ public class BlogController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBlog(@PathVariable Long id) {
+    public ResponseEntity<String> deleteBlog(@PathVariable Long id) {
         try {
             blogService.deleteBlog(id);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok("Xóa bài viết thành công");
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

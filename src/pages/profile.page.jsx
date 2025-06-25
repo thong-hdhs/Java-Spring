@@ -16,7 +16,9 @@ export const dataStructure = {
         id:"",
         fullName:"",
         email:"",
+        gender:"",
         createAt:"",
+        age:""
     },
     totalPosts:0,
     totalViews:0
@@ -36,7 +38,7 @@ const ProfilePage = () => {
     const { userAuth } = useContext(UserContext);
     const userId = userAuth?.user?.id;
 
-    let {userInfo:{id, fullName, email, createAt, gender}, totalPosts, totalViews} = proFile;
+    let {userInfo:{id, fullName, email, createAt, gender, age}, totalPosts, totalViews} = proFile;
 
     const fetchProfile = async () => {
         setLoading(true);
@@ -151,7 +153,7 @@ const ProfilePage = () => {
                             />
                         </>
 
-                        <AboutUser createAt={createAt} gender={gender} />
+                        <AboutUser createAt={createAt} gender={gender} age={age} />
 
 
                     </InPageNavigation>

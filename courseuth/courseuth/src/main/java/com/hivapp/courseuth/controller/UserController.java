@@ -31,6 +31,7 @@ import com.hivapp.courseuth.domain.dto.ResUpdateUserDTO;
 import com.hivapp.courseuth.domain.dto.ResUserDTO;
 import com.hivapp.courseuth.domain.dto.ResetPasswordDTO;
 import com.hivapp.courseuth.domain.dto.ResultPaginationDTO;
+import com.hivapp.courseuth.domain.dto.UpdateUserDTO;
 import com.hivapp.courseuth.repository.BlogActivityRepository;
 import com.hivapp.courseuth.repository.BlogRepository;
 import com.hivapp.courseuth.service.UserService;
@@ -77,15 +78,21 @@ public class UserController {
 
     @DeleteMapping("/users/{id}")
     @ApiMessage("Delete a user")
-    public ResponseEntity<Void> deleteUser(@PathVariable("id") Long id)
+    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable("id") Long id)
             throws IdInvalidException {
         User currentUser = this.userService.fetchUserById(id);
         if (currentUser == null) {
             throw new IdInvalidException("User với id = " + id + " không tồn tại");
         }
 
-        this.userService.handleDeleteUser(id);
-        return ResponseEntity.ok(null);
+        try {
+            this.userService.handleDeleteUser(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Xóa user và tất cả dữ liệu liên quan thành công");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            throw new IdInvalidException("Lỗi khi xóa user: " + e.getMessage());
+        }
     }
 
     @GetMapping("/users/{id}")
@@ -120,14 +127,24 @@ public class UserController {
                 this.userService.fetchAllUser(spec, pageable));
     }
 
-    @PutMapping("/users")
+    @PutMapping("/users/{id}")
     @ApiMessage("Update a user")
-    public ResponseEntity<ResUpdateUserDTO> updateUser(@Valid @RequestBody User user) throws IdInvalidException {
-        User ericUser = this.userService.handleUpdateUser(user);
-        if (ericUser == null) {
-            throw new IdInvalidException("User với id = " + user.getId() + " không tồn tại");
+    public ResponseEntity<ResUpdateUserDTO> updateUser(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody UpdateUserDTO userUpdateDTO) throws IdInvalidException {
+        User user = userService.fetchUserById(id);
+        if (user == null) {
+            throw new IdInvalidException("User với id = " + id + " không tồn tại");
         }
-        return ResponseEntity.ok(this.userService.convertToResUpdateUserDTO(ericUser));
+        // Chỉ cập nhật các trường cho phép
+        user.setFullName(userUpdateDTO.getFullName());
+        user.setPhoneNumber(userUpdateDTO.getPhoneNumber());
+        user.setAge(userUpdateDTO.getAge());
+        user.setGender(userUpdateDTO.getGender());
+        user.setAddress(userUpdateDTO.getAddress());
+        // KHÔNG cập nhật password, createAt, role, ...
+        User updatedUser = userService.handleUpdateUser(user);
+        return ResponseEntity.ok(userService.convertToResUpdateUserDTO(updatedUser));
     }
 
     @GetMapping("/search-users")
@@ -180,7 +197,7 @@ public class UserController {
         // Tạo ResLoginDTO.UserLogin để truyền vào createAccessToken
         ResLoginDTO resLoginDTO = new ResLoginDTO();
         ResLoginDTO.UserLogin userLogin = resLoginDTO.new UserLogin(
-            user.getId(), user.getFullName(), user.getEmail()
+            user.getId(), user.getFullName(), user.getEmail(), user.getRole()
         );
         // Authentication cho accessToken
         Authentication authentication = new UsernamePasswordAuthenticationToken(user.getEmail(), null);

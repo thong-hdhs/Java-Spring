@@ -4,8 +4,12 @@ import { UserContext } from "../App";
 
 const SideNav = () => {
 
-    const { userAuth, userAuth: { accessToken } } = useContext(UserContext);
-
+    const { userAuth, userAuth: { accessToken, user} } = useContext(UserContext);
+    
+    console.log(user)
+    // Lấy role từ userAuth.user.role và so sánh với "ADMIN"
+    const isAdmin = userAuth?.user?.role === "ADMIN";
+    
     let page = location.pathname.split("/")[2];
     let [pageState, setPageState]=useState(page.replace("-", " "));
 
@@ -56,9 +60,9 @@ const SideNav = () => {
                             Blogs
                         </NavLink>
 
-                        <NavLink to="/editor" onClick={(e)=>setPageState(e.target.innerText)} className='sidebar-link'>
+                        <NavLink to="/setting/usermanage" onClick={(e)=>setPageState(e.target.innerText)} className={'sidebar-link ' + (!isAdmin ? "hidden" : "") } >
                             <i className="fi fi-rr-file-edit"></i>
-                            Chỉnh sửa
+                            Quản lý User
                         </NavLink>
 
                         <h1 className="text-xl text-dark-grey mt-20 mb-3">Cài đặt</h1>

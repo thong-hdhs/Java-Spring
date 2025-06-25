@@ -1,5 +1,7 @@
 package com.hivapp.courseuth.domain.dto;
 
+import com.hivapp.courseuth.util.constant.RoleEnum;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,5 +21,6 @@ public class ResLoginDTO {
         private long id;
         private String fullName;
         private String email;
+        private RoleEnum role;
     }
 }

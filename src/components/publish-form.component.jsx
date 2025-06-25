@@ -101,9 +101,9 @@ const PublishForm = ({id}) => {
                 toast.dismiss(loadingToast);
                 toast.success("Đăng bài viết thành công")
 
-                // setTimeout(()=>{
-                //     navigate("/")
-                // }, 1000)
+                setTimeout(()=>{
+                    Navigate("/")
+                }, 1000)
             })
             .catch(({response})=>{
                 e.target.classList.remove("disabled");

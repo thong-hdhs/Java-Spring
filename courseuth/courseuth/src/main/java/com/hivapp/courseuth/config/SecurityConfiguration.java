@@ -106,7 +106,8 @@ public class SecurityConfiguration {
                     ResLoginDTO.UserLogin userLogin = res.new UserLogin(
                         existingUser.getId(),
                         existingUser.getFullName(),
-                        existingUser.getEmail()
+                        existingUser.getEmail(),
+                        existingUser.getRole()
                     );
                     res.setUser(userLogin);
 

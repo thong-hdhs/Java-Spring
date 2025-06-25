@@ -48,7 +48,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             ResLoginDTO.UserLogin userLogin = res.new UserLogin(
                 user.getId(),
                 user.getFullName(),
-                user.getEmail()
+                user.getEmail(),
+                user.getRole()
             );
             res.setUser(userLogin);
 
@@ -73,7 +74,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                 accessToken, 
                 user.getId(),
                 user.getFullName(),
-                user.getEmail()
+                user.getEmail(),
+                user.getRole()
             );
             response.sendRedirect(redirectUrl);
         } else {

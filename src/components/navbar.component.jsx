@@ -3,6 +3,7 @@ import logo from '../imgs/logo.png';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { UserContext } from '../App';
 import UserNavigationPanel from './user-navigation.component';
+import UserAvatar from './user-avatar';
 
 const Navbar = () => {
     const [searchBoxVisibility, setSearchBoxVisibility] = useState(false);
@@ -63,15 +64,15 @@ const Navbar = () => {
             {
                 accessToken ?
                 <>
-                    <Link to="/dashboard/notification">
+                    {/* <Link to="/dashboard/notification">
                         <button className='relative w-12 h-12 rounded-full bg-grey hover:bg-back/10'>
                             <i className='fi fi-rr-bell text-2xl block mt-1'></i>
                         </button>
-                    </Link>
+                    </Link> */}
 
                     <div className='relative' onClick={handleUserNavPanel} onBlur={handleBlur}>
-                        <button className='w-12 h-12 mt-1'>
-                            <img src='https://scontent.fsgn5-10.fna.fbcdn.net/v/t39.30808-1/495174923_543831625460929_8419112568298860223_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=107&ccb=1-7&_nc_sid=e99d92&_nc_ohc=ZREnKqC3qkUQ7kNvwF9MnQz&_nc_oc=Adk96Qp5BxgqE09w8ev9sIrxIwmGrfJWjryJoUs3QXNwZV5CrAngvDOx1hPQDk-FnMk&_nc_zt=24&_nc_ht=scontent.fsgn5-10.fna&_nc_gid=dcZTGUTpxoMpBegcKsrkDg&oh=00_AfKW9rHHkY5c7oh9c63NbFM-6gMOSVRTV0r7i-BqU9YH8w&oe=68461BC4' alt="profileImg" className='w-full h-full object-cover rounded-full' />
+                        <button className='w-12 h-12 mb-[0.8]'>
+                            <UserAvatar name={userAuth.user.fullName} size={42} />
                         </button>
                         {
                             userNavPanel ? <UserNavigationPanel/>

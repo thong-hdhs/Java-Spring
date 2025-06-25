@@ -124,8 +124,21 @@ public class BlogService {
 
     @Transactional
     public void deleteBlog(Long id) {
+        // Lấy blog cần xóa
         Blog blog = blogRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Blog not found with id: " + id));
+
+        // Xóa tất cả like liên quan đến blog
+        blogLikeRepository.deleteAll(blogLikeRepository.findAll().stream()
+            .filter(like -> like.getBlog().getId().equals(id))
+            .toList());
+
+        // Xóa activity liên quan đến blog (nếu có)
+        if (blog.getBlogActivity() != null) {
+            blogActivityRepository.delete(blog.getBlogActivity());
+        }
+
+        // Xóa blog
         blogRepository.delete(blog);
     }
 

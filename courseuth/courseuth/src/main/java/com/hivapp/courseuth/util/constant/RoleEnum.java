@@ -3,7 +3,6 @@ package com.hivapp.courseuth.util.constant;
 public enum RoleEnum {
     GUEST("ROLE_GUEST"),
     MEMBER("ROLE_MEMBER"),
-    CONSULTANT("ROLE_CONSULTANT"),
     ADMIN("ROLE_ADMIN");
 
     private final String role;
