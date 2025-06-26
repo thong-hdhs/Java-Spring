@@ -73,6 +73,7 @@ public class SecurityConfiguration {
                 .requestMatchers(
                     "/auth/**",
                     "/",
+                    "/get-upload-url",
                     "/api/blogs/latest-blogs",
                     "/api/blogs/trending-blogs",
                     "/api/blogs/search-blogs",
@@ -80,6 +81,8 @@ public class SecurityConfiguration {
                     "/api/blogs/search-tags",
                     "/api/search-users"
                 ).permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/users/{id}/role").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/blogs/*/like").permitAll()
                 .anyRequest().authenticated()
             )
@@ -99,6 +102,9 @@ public class SecurityConfiguration {
                         newUser.setRole(com.hivapp.courseuth.util.constant.RoleEnum.MEMBER);
                         newUser.setPassword(passwordEncoder().encode(java.util.UUID.randomUUID().toString()));
                         existingUser = userService.handleCreateUser(newUser);
+                    } else {
+                        // Đảm bảo lấy thông tin user mới nhất từ DB
+                        existingUser = userService.fetchUserById(existingUser.getId());
                     }
 
                     // Tạo response
@@ -168,8 +174,10 @@ public class SecurityConfiguration {
             .build();
         return token -> {
             try {
+                System.out.println("Attempting to decode JWT: " + token);
                 return jwtDecoder.decode(token);
             } catch (Exception e) {
+                System.err.println("Error decoding JWT: " + e.getMessage());
                 throw new RuntimeException("Invalid JWT token: " + e.getMessage());
             }
         };

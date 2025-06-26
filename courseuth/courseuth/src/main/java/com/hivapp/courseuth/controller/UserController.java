@@ -38,6 +38,7 @@ import com.hivapp.courseuth.service.UserService;
 import com.hivapp.courseuth.service.error.IdInvalidException;
 import com.hivapp.courseuth.util.SecurityUtil;
 import com.hivapp.courseuth.util.anotation.ApiMessage;
+import com.hivapp.courseuth.util.constant.RoleEnum;
 import com.turkraft.springfilter.boot.Filter;
 
 import jakarta.validation.Valid;
@@ -145,6 +146,24 @@ public class UserController {
         // KHÔNG cập nhật password, createAt, role, ...
         User updatedUser = userService.handleUpdateUser(user);
         return ResponseEntity.ok(userService.convertToResUpdateUserDTO(updatedUser));
+    }
+
+    @PutMapping("/users/{id}/role")
+    @ApiMessage("Update user role")
+    public ResponseEntity<ResUserDTO> updateUserRole(
+            @PathVariable("id") Long id,
+            @RequestBody Map<String, String> payload) throws IdInvalidException {
+        String roleString = payload.get("role");
+        if (roleString == null || roleString.isEmpty()) {
+            throw new IdInvalidException("Role cannot be empty");
+        }
+        try {
+            RoleEnum newRole = RoleEnum.valueOf(roleString.toUpperCase());
+            User updatedUser = userService.updateUserRole(id, newRole);
+            return ResponseEntity.ok(userService.convertToResUserDTO(updatedUser));
+        } catch (IllegalArgumentException e) {
+            throw new IdInvalidException("Invalid role: " + roleString);
+        }
     }
 
     @GetMapping("/search-users")

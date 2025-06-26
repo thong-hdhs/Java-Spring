@@ -109,7 +109,7 @@ const ManageBlog = () => {
                     {
                         blogs.map((blog, i)=>{
                             return <AnimationWrapper key={i} transition={{delay: 0.4 * i}}>
-                                <ManageBlogCard blog={blog}/>
+                                <ManageBlogCard blog={blog} getBlog={() => getBlog({profileId: userId})}/>
                             </AnimationWrapper>
                         })
 

@@ -9,6 +9,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 
 const PublishForm = ({id}) => {
     const numId = Number(id);
+    const navigate = useNavigate();
 
     const isUpdate = numId ? true : false;
 
@@ -102,7 +103,7 @@ const PublishForm = ({id}) => {
                 toast.success("Đăng bài viết thành công")
 
                 setTimeout(()=>{
-                    Navigate("/")
+                    navigate("/")
                 }, 1000)
             })
             .catch(({response})=>{
@@ -122,6 +123,9 @@ const PublishForm = ({id}) => {
                 e.target.classList.remove("disabled");
                 toast.dismiss(loadingToast);
                 toast.success("Cập nhật bài viết thành công")
+                setTimeout(()=>{
+                    navigate("/")
+                }, 1000)
             })
             .catch((err) => {
                 e.target.classList.remove("disabled");
@@ -152,7 +156,7 @@ const PublishForm = ({id}) => {
 
                     <div className="w-full aspect-video rounded-lg overflow-hidden bg-grey mt-4 shadow-md">
                         {/* <img src={banner} alt="banner" /> */}
-                        <img src="https://cdn-imgix.headout.com/tour/7064/TOUR-IMAGE/b2c74200-8da7-439a-95b6-9cad1aa18742-4445-dubai-img-worlds-of-adventure-tickets-02.jpeg?auto=format&w=900&h=562.5&q=90&ar=16%3A10&crop=faces%2Ccenter&fit=crop" alt="banner" />
+                        <img src={banner} alt="banner" />
                     </div>
                     <h1 className="text-4xl font-medium mt-2 leading-tight line-clamp-2">{title}</h1>
 

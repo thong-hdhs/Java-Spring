@@ -266,7 +266,8 @@ const ManageUser = () => {
             fetchUsers(pagination.current, pagination.pageSize); // Refresh danh sách
         } catch (error) {
             toast.dismiss(loadingToast);
-            toast.error(error.response?.data || "Không thể xóa người dùng");
+            console.error("Error deleting user:", error);
+            toast.error(error.response?.data?.message || "Không thể xóa người dùng");
         }
     };
 
@@ -314,15 +315,49 @@ const ManageUser = () => {
     // Submit form edit user
     const handleSubmitEditUser = async (e) => {
         e.preventDefault();
-        if (!editingUser) return;
+        console.log("handleSubmitEditUser called.");
+        if (!editingUser) {
+            console.log("No editingUser, returning.");
+            return;
+        }
+
+        // Validate các trường bắt buộc
+        if (!formData.fullName.trim()) {
+            toast.error("Họ và tên không được để trống!");
+            console.log("Full name validation failed.");
+            return;
+        }
+        if (!formData.address.trim()) {
+            toast.error("Địa chỉ không được để trống!");
+            console.log("Address validation failed.");
+            return;
+        }
+        if (!formData.phoneNumber.trim()) {
+            toast.error("Số điện thoại không được để trống!");
+            console.log("Phone number validation failed.");
+            return;
+        }
+        if (!formData.age) {
+            toast.error("Năm sinh không được để trống!");
+            console.log("Age validation failed (empty).");
+            return;
+        }
+        if (!formData.gender) {
+            toast.error("Giới tính không được để trống!");
+            console.log("Gender validation failed.");
+            return;
+        }
         
         // Validate tuổi trước khi submit
         if (formData.age && (formData.age < 1905 || formData.age > 2007)) {
             toast.error("Năm sinh phải từ 1905 đến 2007!");
+            console.log("Age validation failed (range).");
             return;
         }
         
         setEditLoading(true);
+        console.log("Attempting to update user with data:", formData);
+        console.log("Using accessToken:", accessToken);
         try {
             await axios.put(
                 `${import.meta.env.VITE_SERVER_DOMAIN}/api/users/${editingUser.id}`,
@@ -344,11 +379,18 @@ const ManageUser = () => {
             handleCloseEditModal();
             // Refresh danh sách user
             fetchUsers(pagination.current, pagination.pageSize);
+            console.log("User update successful.");
         } catch (error) {
             console.error("Error updating user:", error);
-            toast.error(error.response?.data || "Không thể cập nhật thông tin user");
+            if (error.response?.status === 401) {
+                toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+                // Có thể thêm logic để chuyển hướng người dùng đến trang đăng nhập
+            } else {
+                toast.error(error.response?.data?.message || "Không thể cập nhật thông tin user");
+            }
         } finally {
             setEditLoading(false);
+            console.log("Edit loading set to false.");
         }
     };
 
@@ -375,6 +417,31 @@ const ManageUser = () => {
         setSearchText("");
         setRoleFilter("all");
         fetchUsers(1, pagination.pageSize);
+    };
+
+    // Xử lý thay đổi vai trò người dùng
+    const handleChangeRole = async (userId, newRole) => {
+        const loadingToast = toast.loading("Đang cập nhật vai trò...");
+        try {
+            const response = await axios.put(
+                `${import.meta.env.VITE_SERVER_DOMAIN}/api/users/${userId}/role`,
+                { role: newRole },
+                {
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+            toast.dismiss(loadingToast);
+            toast.success("Cập nhật vai trò thành công!");
+            // Cập nhật lại danh sách người dùng để hiển thị vai trò mới
+            fetchUsers(pagination.current, pagination.pageSize);
+        } catch (error) {
+            toast.dismiss(loadingToast);
+            console.error("Error updating user role:", error);
+            toast.error(error.response?.data?.message || "Không thể cập nhật vai trò người dùng");
+        }
     };
 
     return (
@@ -528,7 +595,7 @@ const ManageUser = () => {
                                                     {user.createAt ? new Date(user.createAt).toLocaleDateString('vi-VN') : 'N/A'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div className="flex space-x-2">
+                                                    <div className="flex space-x-2 items-center">
                                                         <button
                                                             onClick={() => handleEditUser(user.id)}
                                                             className="text-blue-600 hover:text-blue-900 transition-colors"
@@ -547,6 +614,15 @@ const ManageUser = () => {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
                                                         </button>
+                                                        <select
+                                                            value={user.role}
+                                                            onChange={(e) => handleChangeRole(user.id, e.target.value)}
+                                                            className="ml-2 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        >
+                                                            <option value="GUEST">Khách</option>
+                                                            <option value="MEMBER">Thành viên</option>
+                                                            <option value="ADMIN">Quản trị viên</option>
+                                                        </select>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -734,7 +810,7 @@ const ManageUser = () => {
                                     <button
                                         type="submit"
                                         disabled={editLoading}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-4 py-2 btn-dark disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {editLoading ? (
                                             <div className="flex items-center">

@@ -7,6 +7,7 @@ import { EditorContext } from "../pages/editor.pages";
 import EditorJS from "@editorjs/editorjs";
 import { tools } from "./tools.component";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 const BlogEditor = ({dataUpdate}) => {
    
@@ -23,8 +24,34 @@ const BlogEditor = ({dataUpdate}) => {
     },[])
     const handleBannerUpload = (e) => {
         let img = e.target.files[0];
+
         if (img) {
-            console.log(img);
+            let loadingToast = toast.loading("Uploading...");
+            console.log("Attempting to get upload URL...");
+            axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/get-upload-url")
+            .then(({ data: uploadURL }) => {
+                console.log("Received upload URL:", uploadURL);
+                axios.put(uploadURL, img, {
+                    headers: { 'Content-Type': img.type }
+                })
+                .then(() => {
+                    toast.dismiss(loadingToast);
+                    toast.success("Uploaded 👍");
+                    let url = uploadURL.split("?")[0]
+                    setBlog({ ...blog, banner: url })
+                    console.log("Upload successful. Banner URL:", url);
+                })
+                .catch(uploadErr => {
+                    toast.dismiss(loadingToast);
+                    toast.error("Upload failed");
+                    console.error("Upload error:", uploadErr);
+                })
+            })
+            .catch(getUrlErr => {
+                toast.dismiss(loadingToast);
+                toast.error("Couldn't get upload url");
+                console.error("Get upload URL error:", getUrlErr);
+            })
         }
     }
 

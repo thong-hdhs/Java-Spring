@@ -7,7 +7,7 @@ import { ExclamationCircleOutlined } from '@ant-design/icons';
 import toast from "react-hot-toast";
 import axios from "axios";
 
-const ManageBlogCard = ({blog})=>{
+const ManageBlogCard = ({blog, getBlog})=>{
 
     let {banner, title, published_at, blog_id, tags, des, activity:{total_likes}} = blog;
     const {userAuth: {accessToken}} = useContext(UserContext);
@@ -51,9 +51,11 @@ const ManageBlogCard = ({blog})=>{
         })
         .finally(()=>{
             toast.dismiss(loadingToast);
+            if(getBlog) {
+                getBlog(); // Gọi hàm làm mới danh sách blog
+            }
         })
 
-        getBlog({profileId: userId});
     }
     return (
         <>

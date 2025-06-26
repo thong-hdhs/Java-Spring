@@ -21,6 +21,7 @@ import com.hivapp.courseuth.repository.BlogActivityRepository;
 import com.hivapp.courseuth.repository.BlogLikeRepository;
 import com.hivapp.courseuth.repository.BlogRepository;
 import com.hivapp.courseuth.repository.UserRepository;
+import com.hivapp.courseuth.util.constant.RoleEnum;
 
 @Service
 public class UserService {
@@ -82,6 +83,13 @@ public class UserService {
         return null;
     }
 
+    public User updateUserRole(Long userId, RoleEnum newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        user.setRole(newRole);
+        return userRepository.save(user);
+    }
+
     @Transactional
     public void handleDeleteUser(Long id) {
         // Lấy user cần xóa
@@ -91,10 +99,7 @@ public class UserService {
         // 1. Xóa tất cả BlogLike của user này
         blogLikeRepository.deleteByUserId(id);
 
-        // 2. Xóa tất cả BlogActivity của user này
-        blogActivityRepository.deleteByUserId(id);
-
-        // 3. Xóa tất cả Blog của user này (cùng với BlogActivity liên quan)
+        // 2. Xóa tất cả Blog của user này
         List<Blog> userBlogs = blogRepository.findByUserId(id);
         
         for (Blog blog : userBlogs) {
@@ -105,7 +110,7 @@ public class UserService {
             blogRepository.delete(blog);
         }
 
-        // 4. Cuối cùng xóa User
+        // 3. Cuối cùng xóa User
         userRepository.delete(user);
     }
 
